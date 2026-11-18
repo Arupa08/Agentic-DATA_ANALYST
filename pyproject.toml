@@ -1,0 +1,83 @@
+[project]
+name = "nl-analytics-agent"
+version = "0.1.0"
+description = "LangGraph agent that answers natural-language business questions over a messy e-commerce database, checks its own work, and proves reliability with evals."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=1.4",
+    "langchain-core>=1.7",
+    "langchain-openai>=1.7",
+    "langgraph>=1.2",
+    "langsmith>=0.14",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.4",
+    "numpy>=2.0",
+    "faker>=30.0",
+    "pyyaml>=6.0",
+    "sqlglot>=25",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+    "httpx>=0.27",
+    "langchain-google-genai>=2.0",
+    "langchain-ollama>=0.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+    "bandit>=1.8",
+    "pip-audit>=2.7",
+    "types-pyyaml>=6.0",
+]
+ui = [
+    "streamlit>=1.40",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# asserts are the point of tests, and test secrets are fake
+"tests/**" = ["S101", "S105", "S106", "S608"]
+# seeded numpy RNG, not crypto randomness
+"data/generate.py" = ["S311"]
+# offline profiling SQL assembled only from module constants; long lines are SQL
+"data/profile.py" = ["S608", "E501"]
+# markdown table rows read best one per line
+"evals/report.py" = ["E501"]
+"evals/compare.py" = ["E501"]
+"ui/dashboard_data.py" = ["E501"]
+"ui/dashboard.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["agent", "data", "evals", "ui"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["faker.*", "pandas.*", "streamlit.*", "altair.*"]
+ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]

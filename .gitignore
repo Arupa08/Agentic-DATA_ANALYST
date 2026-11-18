@@ -1,0 +1,25 @@
+# secrets — only .env.example is committed
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# generated data (rebuilt by `make data`)
+data/*.db
+data/*.db-journal
+
+# llm dev cache
+.cache/
+
+# live eval progress (the finished report is the committed record)
+evals/reports/live/

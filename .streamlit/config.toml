@@ -1,0 +1,8 @@
+# Local dashboard: bind to this machine only and send no usage telemetry.
+# The Phase 7 container overrides the address to serve the UI.
+[server]
+address = "localhost"
+headless = true
+
+[browser]
+gatherUsageStats = false

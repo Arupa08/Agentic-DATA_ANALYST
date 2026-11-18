@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "label": "smoke-local-3",
+    "created": "2026-11-04_1359",
+    "prompt_version": "v1",
+    "models": {
+      "cheap": "ollama:qwen3:4b-instruct",
+      "strong": "ollama:qwen3:4b-instruct"
+    },
+    "routing": "cheap+strong",
+    "use_glossary": true,
+    "critic_llm": true,
+    "runs_per_case": 1,
+    "holdout": false,
+    "case_ids": [
+      "simple_02",
+      "simple_03"
+    ]
+  },
+  "summary": {
+    "runs": 2,
+    "graded": 2,
+    "ungraded": 0,
+    "not_run_quota": 0,
+    "passed": 2,
+    "pass_rate": 1.0,
+    "cases_passing_every_run": 2,
+    "cases": 2,
+    "by_category": {
+      "simple_lookup": {
+        "runs": 2,
+        "passed": 2,
+        "pass_rate": 1.0,
+        "mean_cost_usd": 0.0,
+        "p50_latency_ms": 77534
+      }
+    },
+    "failure_taxonomy": {},
+    "self_correction": {
+      "runs_with_replan": 0,
+      "passed_after_replan": 0,
+      "critic_false_alarms": 0,
+      "critic_misses": 0
+    },
+    "cost": {
+      "agent_total_usd": 0.0,
+      "mean_per_query_usd": 0.0,
+      "grading_total_usd": 0.0
+    },
+    "latency_ms": {
+      "p50": 77534,
+      "p95": 89515
+    },
+    "mean_tokens_per_query": 5752.0,
+    "adversarial": {},
+    "per_case": {
+      "simple_02": {
+        "category": "simple_lookup",
+        "passed": "1/1",
+        "statuses": {
+          "answered": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_03": {
+        "category": "simple_lookup",
+        "passed": "1/1",
+        "statuses": {
+          "answered": 1
+        },
+        "mean_cost_usd": 0.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "case_id": "simple_02",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": true,
+      "root_cause": null,
+      "status": "answered",
+      "fields": [
+        {
+          "name": "orders",
+          "passed": true,
+          "expected": 4172.0,
+          "got": "4,172"
+        }
+      ],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 5248,
+      "latency_ms": 77534,
+      "grading_cost_usd": 0.0,
+      "answer": "4,172 orders were placed in December 2025, including cancelled ones.\n\ncaveats: - The query filtered for order timestamps in the format '2025-12-%' and excluded NULL timestamps. - The result is a count of all orders, regardless of status (completed or cancelled). - The query returned only one row, indicating successful execution with no errors.",
+      "assumptions": [],
+      "sql": [
+        "SELECT COUNT(*) AS order_count FROM orders WHERE order_ts LIKE '2025-12-%' AND NOT order_ts IS NULL LIMIT 5001"
+      ],
+      "request_id": "d5a39787e594"
+    },
+    {
+      "case_id": "simple_03",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": true,
+      "root_cause": null,
+      "status": "answered",
+      "fields": [
+        {
+          "name": "active_subscriptions",
+          "passed": true,
+          "expected": 3371.0,
+          "got": "3,371"
+        }
+      ],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 6256,
+      "latency_ms": 89515,
+      "grading_cost_usd": 0.0,
+      "answer": "3,371 subscriptions are currently active.\n\ncaveats: - The query filtered for `status = 'active'` and `end_date IS NULL` to ensure subscriptions are not cancelled or ended. - The result is consistent across both queries, confirming accuracy. - The `LIMIT 5001` was applied, but since the result is a count and the dataset is not large, it does not affect the final number.",
+      "assumptions": [],
+      "sql": [
+        "SELECT COUNT(*) AS active_subscriptions FROM subscriptions WHERE status = 'active' LIMIT 5001",
+        "SELECT COUNT(*) AS active_subscriptions FROM subscriptions WHERE status = 'active' AND end_date IS NULL LIMIT 5001"
+      ],
+      "request_id": "7f3bf439914d"
+    }
+  ]
+}
