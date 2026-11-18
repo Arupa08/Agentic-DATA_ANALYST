@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "demo-app",
+      "runtimeExecutable": "C:/Users/ASUS/AppData/Local/Programs/Python/Python313/python.exe",
+      "runtimeArgs": ["-m", "uv", "run", "--group", "ui", "streamlit", "run", "ui/app.py", "--server.port", "8501"],
+      "port": 8501
+    }
+  ]
+}

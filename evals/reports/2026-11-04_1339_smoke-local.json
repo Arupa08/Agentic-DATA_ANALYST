@@ -1,0 +1,265 @@
+{
+  "meta": {
+    "label": "smoke-local",
+    "created": "2026-11-04_1339",
+    "prompt_version": "v1",
+    "models": {
+      "cheap": "ollama:qwen3:4b-instruct",
+      "strong": "ollama:qwen3:4b-instruct"
+    },
+    "routing": "cheap+strong",
+    "use_glossary": true,
+    "critic_llm": true,
+    "runs_per_case": 1,
+    "holdout": false,
+    "case_ids": [
+      "simple_01",
+      "simple_02",
+      "simple_03",
+      "simple_04",
+      "simple_05"
+    ]
+  },
+  "summary": {
+    "runs": 5,
+    "graded": 5,
+    "ungraded": 0,
+    "not_run_quota": 0,
+    "passed": 0,
+    "pass_rate": 0.0,
+    "cases_passing_every_run": 0,
+    "cases": 5,
+    "by_category": {
+      "simple_lookup": {
+        "runs": 5,
+        "passed": 0,
+        "pass_rate": 0.0,
+        "mean_cost_usd": 0.0,
+        "p50_latency_ms": 66614
+      }
+    },
+    "failure_taxonomy": {
+      "agent_error": {
+        "count": 4,
+        "runs": [
+          "simple_01#1",
+          "simple_02#1",
+          "simple_03#1",
+          "simple_04#1"
+        ]
+      },
+      "plan_error": {
+        "count": 1,
+        "runs": [
+          "simple_05#1"
+        ]
+      }
+    },
+    "self_correction": {
+      "runs_with_replan": 0,
+      "passed_after_replan": 0,
+      "critic_false_alarms": 0,
+      "critic_misses": 0
+    },
+    "cost": {
+      "agent_total_usd": 0.0,
+      "mean_per_query_usd": 0.0,
+      "grading_total_usd": 0
+    },
+    "latency_ms": {
+      "p50": 66614,
+      "p95": 193316
+    },
+    "mean_tokens_per_query": 6661.0,
+    "adversarial": {},
+    "per_case": {
+      "simple_01": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "failed": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_02": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "failed": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_03": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "failed": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_04": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "failed": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_05": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "needs_clarification": 1
+        },
+        "mean_cost_usd": 0.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "case_id": "simple_01",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": false,
+      "root_cause": "agent_error",
+      "status": "failed",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 6783,
+      "latency_ms": 193316,
+      "grading_cost_usd": 0,
+      "answer": "Something went wrong while answering. Please try again.",
+      "assumptions": [],
+      "sql": [],
+      "request_id": "60d1916d6ec1"
+    },
+    {
+      "case_id": "simple_02",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": false,
+      "root_cause": "agent_error",
+      "status": "failed",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 5248,
+      "latency_ms": 58893,
+      "grading_cost_usd": 0,
+      "answer": "Something went wrong while answering. Please try again.",
+      "assumptions": [],
+      "sql": [],
+      "request_id": "f58c9e4863fd"
+    },
+    {
+      "case_id": "simple_03",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": false,
+      "root_cause": "agent_error",
+      "status": "failed",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 6256,
+      "latency_ms": 66614,
+      "grading_cost_usd": 0,
+      "answer": "Something went wrong while answering. Please try again.",
+      "assumptions": [],
+      "sql": [],
+      "request_id": "25df53fb9e46"
+    },
+    {
+      "case_id": "simple_04",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": false,
+      "root_cause": "agent_error",
+      "status": "failed",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 11553,
+      "latency_ms": 113241,
+      "grading_cost_usd": 0,
+      "answer": "I couldn't work out how to answer this from the available data. Try rephrasing the question or naming the metric and period you're interested in.",
+      "assumptions": [],
+      "sql": [],
+      "request_id": "84ec53a2cc07"
+    },
+    {
+      "case_id": "simple_05",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": false,
+      "root_cause": "plan_error",
+      "status": "needs_clarification",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 3465,
+      "latency_ms": 15820,
+      "grading_cost_usd": 0,
+      "answer": "Do you mean support tickets created in Q4 2025, or tickets that were resolved in Q4 2025?",
+      "assumptions": [],
+      "sql": [],
+      "request_id": "d145fba4f9b9"
+    }
+  ]
+}

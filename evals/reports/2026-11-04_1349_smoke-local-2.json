@@ -1,0 +1,277 @@
+{
+  "meta": {
+    "label": "smoke-local-2",
+    "created": "2026-11-04_1349",
+    "prompt_version": "v1",
+    "models": {
+      "cheap": "ollama:qwen3:4b-instruct",
+      "strong": "ollama:qwen3:4b-instruct"
+    },
+    "routing": "cheap+strong",
+    "use_glossary": true,
+    "critic_llm": true,
+    "runs_per_case": 1,
+    "holdout": false,
+    "case_ids": [
+      "simple_01",
+      "simple_02",
+      "simple_03",
+      "simple_04",
+      "simple_05"
+    ]
+  },
+  "summary": {
+    "runs": 5,
+    "graded": 3,
+    "ungraded": 2,
+    "not_run_quota": 0,
+    "passed": 1,
+    "pass_rate": 0.333,
+    "cases_passing_every_run": 1,
+    "cases": 5,
+    "by_category": {
+      "simple_lookup": {
+        "runs": 3,
+        "passed": 1,
+        "pass_rate": 0.333,
+        "mean_cost_usd": 0.0,
+        "p50_latency_ms": 109178
+      }
+    },
+    "failure_taxonomy": {
+      "agent_error": {
+        "count": 1,
+        "runs": [
+          "simple_04#1"
+        ]
+      },
+      "plan_error": {
+        "count": 1,
+        "runs": [
+          "simple_05#1"
+        ]
+      }
+    },
+    "self_correction": {
+      "runs_with_replan": 0,
+      "passed_after_replan": 0,
+      "critic_false_alarms": 0,
+      "critic_misses": 0
+    },
+    "cost": {
+      "agent_total_usd": 0.0,
+      "mean_per_query_usd": 0.0,
+      "grading_total_usd": 0.0
+    },
+    "latency_ms": {
+      "p50": 58481,
+      "p95": 115947
+    },
+    "mean_tokens_per_query": 6661.8,
+    "adversarial": {},
+    "per_case": {
+      "simple_01": {
+        "category": "simple_lookup",
+        "passed": "1/1",
+        "statuses": {
+          "answered": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_02": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "answered": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_03": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "answered": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_04": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "failed": 1
+        },
+        "mean_cost_usd": 0.0
+      },
+      "simple_05": {
+        "category": "simple_lookup",
+        "passed": "0/1",
+        "statuses": {
+          "needs_clarification": 1
+        },
+        "mean_cost_usd": 0.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "case_id": "simple_01",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": true,
+      "root_cause": null,
+      "status": "answered",
+      "fields": [
+        {
+          "name": "revenue",
+          "passed": true,
+          "expected": 1783489.61,
+          "got": 1783489.61
+        }
+      ],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 6787,
+      "latency_ms": 115947,
+      "grading_cost_usd": 0.0,
+      "answer": "The total revenue in Q3 2025 was $1,783,489.61.\n\ncaveats: - The query filters for orders with status 'completed' and timestamps in Q3 2025 (July 1 to September 30, 2025), which aligns with the definition of Q3. - Both queries returned the same result, confirming consistency in revenue calculation. - The result excludes cancelled orders and refunds, as the filter on 'completed' status ensures only finalized orders are included. - The data is limited to 5001 rows, but no indication of data truncation or missing values was found in the result.",
+      "assumptions": [],
+      "sql": [
+        "SELECT SUM(oi.line_total) AS total_revenue FROM orders AS o JOIN order_items AS oi ON o.order_id = oi.order_id WHERE o.status = 'completed' AND o.order_ts >= '2025-07-01' AND o.order_ts < '2025-10-01' LIMIT 5001",
+        "SELECT SUM(oi.line_total) AS total_revenue FROM order_items AS oi JOIN orders AS o ON oi.order_id = o.order_id WHERE o.status = 'completed' AND o.order_ts >= '2025-07-01' AND o.order_ts < '2025-10-01' LIMIT 5001"
+      ],
+      "request_id": "13d0299ccf14"
+    },
+    {
+      "case_id": "simple_02",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": false,
+      "grading_error": "ExtractedFields output rejected: 1 validation error for ExtractedFields\norders\n  Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='4,172', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/float_parsing",
+      "passed": false,
+      "root_cause": null,
+      "status": "answered",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 5248,
+      "latency_ms": 48343,
+      "grading_cost_usd": 0.0,
+      "answer": "4,172 orders were placed in December 2025, including cancelled ones.\n\ncaveats: - The query filtered for order timestamps in the format '2025-12-%' and excluded NULL timestamps. - The result is a count of all orders, regardless of status (completed or cancelled). - The query returned only one row, indicating successful execution with no errors.",
+      "assumptions": [],
+      "sql": [
+        "SELECT COUNT(*) AS order_count FROM orders WHERE order_ts LIKE '2025-12-%' AND NOT order_ts IS NULL LIMIT 5001"
+      ],
+      "request_id": "51350bf7979c"
+    },
+    {
+      "case_id": "simple_03",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": false,
+      "grading_error": "ExtractedFields output rejected: 1 validation error for ExtractedFields\nactive_subscriptions\n  Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='3,371', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/float_parsi",
+      "passed": false,
+      "root_cause": null,
+      "status": "answered",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 6256,
+      "latency_ms": 58481,
+      "grading_cost_usd": 0.0,
+      "answer": "3,371 subscriptions are currently active.\n\ncaveats: - The query filtered for `status = 'active'` and `end_date IS NULL` to ensure subscriptions are not cancelled or ended. - The result is consistent across both queries, confirming accuracy. - The `LIMIT 5001` was applied, but since the result is a count and the dataset is not large, it does not affect the final number.",
+      "assumptions": [],
+      "sql": [
+        "SELECT COUNT(*) AS active_subscriptions FROM subscriptions WHERE status = 'active' LIMIT 5001",
+        "SELECT COUNT(*) AS active_subscriptions FROM subscriptions WHERE status = 'active' AND end_date IS NULL LIMIT 5001"
+      ],
+      "request_id": "31a30c885242"
+    },
+    {
+      "case_id": "simple_04",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": false,
+      "root_cause": "agent_error",
+      "status": "failed",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 11553,
+      "latency_ms": 109178,
+      "grading_cost_usd": 0,
+      "answer": "I couldn't work out how to answer this from the available data. Try rephrasing the question or naming the metric and period you're interested in.",
+      "assumptions": [],
+      "sql": [],
+      "request_id": "995e5b698cb2"
+    },
+    {
+      "case_id": "simple_05",
+      "category": "simple_lookup",
+      "behavior": "answer",
+      "run": 1,
+      "graded": true,
+      "grading_error": null,
+      "passed": false,
+      "root_cause": "plan_error",
+      "status": "needs_clarification",
+      "fields": [],
+      "stated_assumption": null,
+      "interpretation": null,
+      "rubric": [],
+      "db_unchanged": null,
+      "leaked": [],
+      "safety_layers": [],
+      "replans": 0,
+      "critic_false_alarms": 0,
+      "critic_miss": false,
+      "cost_usd": 0.0,
+      "tokens": 3465,
+      "latency_ms": 6528,
+      "grading_cost_usd": 0,
+      "answer": "Do you mean support tickets created in Q4 2025, or tickets that were resolved in Q4 2025?",
+      "assumptions": [],
+      "sql": [],
+      "request_id": "e6f57405354d"
+    }
+  ]
+}

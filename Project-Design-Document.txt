@@ -1,0 +1,94 @@
+1. The Problem This Solves
+
+Business analysts and PMs constantly need answers from data — "which region had the worst churn last quarter," "show me revenue trend by product line" — but every question requires a data analyst to write SQL, generate a chart, and explain it. That loop takes hours to days and doesn't scale.
+
+The gap this project closes: an agent that can take a natural-language business question, autonomously plan the steps needed to answer it (query data, compute stats, generate a visualization, sanity-check its own output), and return a verified, explained answer — without a human writing SQL or Python for every ask.
+
+This is deliberately not a chatbot wrapper. It's a reasoning system that plans, acts, observes, and self-corrects — which is the exact skillset 2026 JDs for LLM/GenAI/ML Engineer and Forward Deployed Engineer roles are testing for.
+
+Why this specific problem, for hiring purposes: it's a real enterprise pattern (every company has a "talk to your data" need right now), it's demoable in an interview in under 2 minutes, and it naturally forces you to build every component panels probe: tool orchestration, error recovery, evaluation, and observability.
+
+2. System Architecture
+User Query (NL)
+      │
+      ▼
+┌─────────────┐
+│  Planner     │  Decomposes query into ordered sub-tasks
+│  Agent       │  (LangGraph StateGraph node)
+└──────┬───────┘
+       │
+       ▼
+┌─────────────────────────────────────────┐
+│         Tool-Calling Executor Node        │
+│  ┌───────────┐ ┌───────────┐ ┌─────────┐ │
+│  │ SQL Tool   │ │ Python    │ │ Web     │ │
+│  │ (DB query) │ │ Exec Tool │ │ Search  │ │
+│  └───────────┘ └───────────┘ └─────────┘ │
+└──────────────────┬────────────────────────┘
+                    ▼
+            ┌───────────────┐
+            │ Critic /       │  Checks: did the tool output
+            │ Validator Node │  actually answer the sub-task?
+            └───────┬────────┘
+                     │  fail → loop back to Planner (retry/replan)
+                     │  pass ▼
+            ┌────────────────┐
+            │ Synthesis Node  │  Composes final answer + chart
+            └────────┬────────┘
+                     ▼
+              Final Answer + Viz
+                     │
+                     ▼
+        LangSmith trace logged (every node, every retry)
+
+This is a cyclic graph, not a linear pipeline — the Critic node can send execution back to the Planner. That loop is the single most important architectural decision in this project, because it's what separates "agentic" from "a chain with extra steps," and it's the first thing a technical interviewer will look for.
+
+3. Tech Stack — What and Why
+Component	Choice	Why this, specifically
+Orchestration	LangGraph (not legacy LangChain AgentExecutor)	Explicit state machine, native support for cycles/retries, and it's the framework 2026 job specs actually name. AgentExecutor is considered legacy — using it signals you haven't kept up.
+LLM	GPT-4o-mini for planning/routing, GPT-4o for synthesis	Shows cost-awareness: routing/simple sub-tasks don't need the expensive model. Interviewers ask "why this model for this step" — have a real answer, not "I used the best one."
+Data layer	SQLite/Postgres + a synthetic e-commerce dataset (10k+ rows, multiple tables with real foreign keys)	Must have real joins and dirty data (nulls, duplicates) — a single flat CSV is an instant red flag that this is a toy.
+Python exec sandbox	Restricted exec() environment or E2B/local Docker sandbox	Never eval raw LLM-generated code unsandboxed — this is a security question panels ask directly for code-exec agents.
+Evaluation	DeepEval or RAGAS-style custom harness	You need a held-out set of 20-30 question/expected-answer pairs and an automated pass/fail score. "It works when I tried it" does not survive an interview.
+Observability	LangSmith (or Langfuse if self-hosting)	Every agent run traced — planner decisions, tool calls, retries, token cost, latency. This is what you screen-share in an interview instead of describing it verbally.
+Deployment	FastAPI backend + Streamlit or minimal React frontend, Dockerized	Shows you can ship, not just prototype in a notebook.
+Frontend (optional but strong)	Streamlit for speed, or a lightweight React chat UI if you want FDE-style polish	FDE roles specifically value "can build a usable interface fast."
+4. Depth Actually Required at Each Layer (this is what gets you hired vs. rejected)
+
+Most candidates stop at "it returns an answer." A hire-worthy version needs depth in these five places specifically, because these are exactly where interviewers probe:
+
+a) Planning depth
+Don't just do single-shot "generate SQL from question." Show multi-step decomposition: e.g., "compare Q3 vs Q4 churn by region" → (1) query Q3 data, (2) query Q4 data, (3) compute delta, (4) rank regions, (5) generate chart.
+Log the plan itself as a visible artifact, not just the final answer — this is what you show first in a demo.
+b) Self-correction (the part 90% of student projects skip entirely)
+The Critic node must actually be able to fail a step (e.g., SQL returned an empty table, or a column name doesn't exist) and trigger a replan — not just retry the same broken call.
+Have a real example ready: "the agent guessed a wrong column name, the critic caught the empty result, and the planner regenerated the query using the actual schema." This single anecdote answers three interview questions at once.
+c) Evaluation rigor
+Build a fixed eval set BEFORE you start "improving" the agent — otherwise your accuracy number is meaningless.
+Track: task success rate, average steps-to-completion, average latency, average cost per query.
+Be ready to explain your failure modes: what % of queries fail and why (ambiguous question, schema mismatch, hallucinated column, etc.) — this shows you understand your own system's limits, which senior interviewers weight heavily.
+d) Cost/latency awareness
+Log token usage and $ cost per query type. Know your numbers: "simple lookups cost $0.002 and take 2s, multi-step comparisons cost $0.02 and take 8s."
+Mention one concrete optimization you made because of this (e.g., routing simple queries to a cheaper model, caching repeated schema lookups).
+e) Production hygiene
+Input validation (block destructive SQL — no DROP/DELETE from an LLM-generated query, ever)
+Structured logging, not print statements
+A documented failure mode you chose not to fix yet, with reasoning — this reads as engineering maturity, not incompleteness
+5. What "Motive-Driven" Actually Means Here
+
+The project should be built around a defensible narrative, not a feature checklist. Yours could be:
+
+"I built this because RAG-only demos are commoditized in 2026 — every candidate has one. Companies now need agents that can reason across multiple steps, catch their own mistakes, and prove they work through evals, not vibes. This project demonstrates all three, on a problem (natural-language data analysis) that maps directly to what enterprises are actually buying agentic AI for right now."
+
+That one paragraph, delivered confidently in an interview, does more work than any additional feature would.
+
+6. Minimum Bar to Call This "Done" for Applications
+ LangGraph implementation with a real cyclic retry path (not just linear chaining)
+ At least 3 distinct tools (SQL, Python exec, one more — chart gen or web search)
+ A documented eval set (20+ cases) with a pass-rate number you can defend
+ LangSmith trace screenshots/GIF for your README and demo
+ Dockerized FastAPI deployment, live URL if possible (Render/Railway/HF Spaces)
+ README with the architecture diagram, the "why" narrative, and known limitations
+ A recorded 90-second demo video/GIF for your resume/LinkedIn — panels and recruiters both respond to this more than text
+
+Once this is built, it directly reinforces your Agentic Code Review Assistant project — same architectural muscle (multi-agent/multi-step reasoning + evals + observability), applied to a second domain. That pairing is what makes a portfolio read as a pattern of competence rather than one lucky project.
