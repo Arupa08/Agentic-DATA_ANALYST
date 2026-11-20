@@ -1,0 +1,55 @@
+# docker compose up --build      -> UI on http://localhost:8501, API on http://localhost:8000
+#
+# The model: by default the API uses the Ollama app already running on this machine
+# (host.docker.internal). To run Ollama in a container instead:
+#   docker compose --profile ollama up --build
+#   docker compose exec ollama ollama pull qwen3:4b-instruct
+# with OLLAMA_BASE_URL=http://ollama:11434 in .env.
+#
+# Both ports are published on 127.0.0.1 only. The database is SQLite baked into the image
+# read-only (the plan's Postgres service is not used; see README "Known limitations").
+
+x-hardening: &hardening
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *hardening
+    build: .
+    image: nl-analytics-agent:latest
+    env_file:
+      - path: .env  # model keys; never copied into the image
+        required: false
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      API_CORS_ORIGINS: '["http://localhost:8501"]'
+      # the UI forwards each visitor's IP so the per-IP rate limit applies per visitor;
+      # trusted here because the API port is only reachable from this machine and the UI
+      FORWARDED_ALLOW_IPS: "*"
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["127.0.0.1:8000:8000"]
+
+  ui:
+    <<: *hardening
+    image: nl-analytics-agent:latest
+    command: ["streamlit", "run", "ui/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    environment:
+      AGENT_API_URL: http://api:8000  # the UI holds no model keys
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=4)"]
+    ports: ["127.0.0.1:${UI_PORT:-8501}:8501"]  # UI_PORT=8502 if 8501 is taken
+    depends_on:
+      api:
+        condition: service_healthy
+
+  ollama:
+    image: ollama/ollama:0.40.16
+    profiles: [ollama]
+    volumes: [ollama:/root/.ollama]
+
+volumes:
+  ollama:

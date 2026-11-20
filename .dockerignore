@@ -1,0 +1,23 @@
+# secrets never enter the build context
+.env
+.env.*
+!.env.example
+
+.git
+.github
+.claude
+.vscode
+.venv
+**/__pycache__
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.cache
+data/*.db
+data/*.db-journal
+evals/reports/live
+tests
+scripts
+*.md
+!data/DATA_CARD.md
+Project-Design-Document.txt

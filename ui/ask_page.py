@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,7 @@ from agent.llm import LOCAL_PROVIDERS, RateLimited, provider_of  # noqa: E402
 from ui import ask_support as support  # noqa: E402
 
 log = logging.getLogger(__name__)
+REMOTE_URL = support.api_url()  # None: run the agent in-process
 
 
 @st.cache_resource(show_spinner="Starting the agent (the first run loads the sandbox)...")
@@ -45,10 +47,14 @@ def run_question(question: str) -> dict[str, Any] | None:
     """Run the agent in a worker thread; redraw its progress from this (the script) thread."""
     recorder = support.NodeRecorder()
     box: dict[str, Any] = {}
+    # read here: Streamlit's context isn't available in the worker thread
+    ip = st.context.ip_address if REMOTE_URL else None
+    client_ip = ip if isinstance(ip, str) else None
+    extra = {"forwarded_for": client_ip} if REMOTE_URL else {"extra_callbacks": [recorder]}
 
     def work() -> None:
         try:
-            box["response"] = _agent().ask(question, tags=("ui",), extra_callbacks=[recorder])
+            box["response"] = _agent().ask(question, tags=("ui",), **extra)
         except Exception as exc:  # reported below, generically
             box["error"] = exc
 
@@ -58,7 +64,9 @@ def run_question(question: str) -> dict[str, Any] | None:
         progress = st.empty()
         while thread.is_alive():
             lines = support.timeline(recorder.events, recorder.started)
-            progress.code("\n".join(lines) or "starting...", language=None)
+            elapsed = time.monotonic() - recorder.started
+            idle = f"waiting for the agent API ({elapsed:.0f}s)" if REMOTE_URL else "starting..."
+            progress.code("\n".join(lines) or idle, language=None)
             thread.join(0.4)
         lines = support.timeline(recorder.events, recorder.started)
         progress.code("\n".join(lines) or "-", language=None)
@@ -74,8 +82,8 @@ def run_question(question: str) -> dict[str, Any] | None:
     if isinstance(error, ValueError):
         st.warning(f"Questions must be 1 to {MAX_QUESTION_CHARS} characters.")
         return None
-    if isinstance(error, RateLimited):
-        st.error("The model is rate-limited or out of quota. Try again in a little while.")
+    if isinstance(error, RateLimited | support.RemoteBusy):
+        st.error("The agent is busy or rate-limited right now. Try again in a minute.")
         return None
     if error is not None or response is None:
         log.error("ui_ask_failed", exc_info=error)  # details to the server log only
@@ -98,7 +106,7 @@ def render(entry: dict[str, Any], *, local: bool) -> None:
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Time", f"{r.latency_ms / 1000:.1f}s")
     c2.metric("Tokens", f"{r.total_tokens:,}")
-    c3.metric("Cost", "$0 (local)" if local else f"${r.cost_usd:.4f}")
+    c3.metric("Cost", "$0 (local)" if local or r.cost_usd == 0 else f"${r.cost_usd:.4f}")
     c4.metric("Replans", r.replans)
     c5.metric("Steps run", sum(s.ok is not None for s in r.steps))
 
@@ -186,24 +194,36 @@ st.caption(
     "or sandboxed Python, checks every result, and replans when a check fails."
 )
 
-try:
-    settings = get_settings()
-except ValidationError:
-    st.error("The app's settings are incomplete. Compare your .env with .env.example.")
-    st.stop()
-
-local = provider_of(settings.cheap_model) in LOCAL_PROVIDERS
 history: list[dict[str, Any]] = st.session_state.setdefault("history", [])
 
+if REMOTE_URL:
+    # the API holds the model settings and keys; this page holds none
+    local = False
+    with st.sidebar:
+        st.markdown("**Agent**")
+        st.caption("Answers come from the agent's HTTP API.")
+        if isinstance(agent := _agent(), support.RemoteAgent) and agent.healthy():
+            st.caption("🟢 The agent API is up")
+        else:
+            st.caption("🔴 The agent API isn't responding. Try again shortly.")
+else:
+    try:
+        settings = get_settings()
+    except ValidationError:
+        st.error("The app's settings are incomplete. Compare your .env with .env.example.")
+        st.stop()
+    local = provider_of(settings.cheap_model) in LOCAL_PROVIDERS
+    with st.sidebar:
+        st.markdown("**Model**")
+        for line in support.model_summary(settings):
+            st.caption(line)
+        reachable = support.local_model_reachable(settings)
+        if reachable is True:
+            st.caption("🟢 Local model server is running")
+        elif reachable is False:
+            st.caption("🔴 Ollama isn't responding. Start the Ollama app, then ask again.")
+
 with st.sidebar:
-    st.markdown("**Model**")
-    for line in support.model_summary(settings):
-        st.caption(line)
-    reachable = support.local_model_reachable(settings)
-    if reachable is True:
-        st.caption("🟢 Local model server is running")
-    elif reachable is False:
-        st.caption("🔴 Ollama isn't responding. Start the Ollama app, then ask again.")
     if history:
         st.divider()
         st.markdown("**This session**")

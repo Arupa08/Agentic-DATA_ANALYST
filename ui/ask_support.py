@@ -7,6 +7,7 @@ bridge between the two.
 
 from __future__ import annotations
 
+import os
 import threading
 import time
 from dataclasses import dataclass
@@ -17,7 +18,13 @@ import httpx
 from langchain_core.callbacks import BaseCallbackHandler
 
 from agent.config import Settings
+from agent.graph import AgentResponse
 from agent.llm import LOCAL_PROVIDERS, provider_of
+
+# set (e.g. by docker compose) to have the page call the HTTP API instead of running the
+# agent in-process; the UI then needs no model keys at all
+API_URL_ENV = "AGENT_API_URL"
+REMOTE_TIMEOUT_S = 900.0  # a local model can take several minutes on a hard question
 
 NODE_LABELS = {
     "planner": "Planning",
@@ -110,8 +117,49 @@ def local_model_reachable(settings: Settings, timeout_s: float = 2.0) -> bool | 
     return resp.status_code == 200
 
 
+def api_url() -> str | None:
+    value = os.environ.get(API_URL_ENV, "").strip().rstrip("/")
+    return value or None
+
+
+class RemoteBusy(Exception):
+    """The API turned the question away: rate limit, all slots busy, or provider quota."""
+
+
+class RemoteAgent:
+    """`Agent.ask` over HTTP. No live progress: the API answers in one response."""
+
+    def __init__(self, base_url: str, client: httpx.Client | None = None) -> None:
+        self.base_url = base_url.rstrip("/")
+        self._client = client if client is not None else httpx.Client(timeout=REMOTE_TIMEOUT_S)
+
+    def ask(self, question: str, *, forwarded_for: str | None = None, **_: Any) -> AgentResponse:
+        # the API rate-limits per client IP; behind this UI every request would otherwise
+        # come from one address. The API trusts this header only from configured proxies.
+        headers = {"X-Forwarded-For": forwarded_for} if forwarded_for else {}
+        resp = self._client.post(
+            f"{self.base_url}/ask", json={"question": question}, headers=headers
+        )
+        if resp.status_code == 422:
+            raise ValueError("question rejected by the API")
+        if resp.status_code in (429, 503):
+            raise RemoteBusy(str(resp.status_code))
+        if resp.status_code != 200:
+            raise RuntimeError(f"the API returned HTTP {resp.status_code}")
+        return AgentResponse.model_validate_json(resp.content)
+
+    def healthy(self, timeout_s: float = 2.0) -> bool:
+        try:
+            return self._client.get(f"{self.base_url}/health", timeout=timeout_s).is_success
+        except httpx.HTTPError:
+            return False
+
+
 def make_agent() -> Any:
-    """Build the real agent (tests replace this). Pays the sandbox's one-time startup."""
+    """Build the agent (tests replace this): over HTTP when `AGENT_API_URL` is set,
+    otherwise in-process, paying the sandbox's one-time startup."""
+    if (url := api_url()) is not None:
+        return RemoteAgent(url)
     from agent.config import get_settings
     from agent.deps import build_deps
     from agent.graph import Agent

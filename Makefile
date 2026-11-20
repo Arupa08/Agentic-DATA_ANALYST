@@ -1,4 +1,4 @@
-.PHONY: install data profile evals-verify evals evals-routing dashboard test lint format typecheck security check hello
+.PHONY: install data profile evals-verify evals evals-routing dashboard api up test lint format typecheck security check hello
 
 install:            ## install deps from the lockfile + git hooks
 	uv sync --locked
@@ -22,6 +22,12 @@ evals-routing:      ## live: the all-strong arm of the routing experiment
 dashboard:          ## demo UI (ask the agent + eval results) at http://localhost:8501
 	uv run --group ui streamlit run ui/app.py
 
+api:                ## HTTP API at http://localhost:8000 (docs at /docs)
+	uv run uvicorn api.main:app --port 8000
+
+up:                 ## API + UI in Docker (UI on http://localhost:8501)
+	docker compose up --build
+
 test:
 	uv run pytest
 
@@ -37,7 +43,7 @@ typecheck:
 	uv run mypy
 
 security:           ## code + dependency security scans (secret scan runs in pre-commit / CI)
-	uv run bandit -q -c pyproject.toml -r agent data evals scripts ui
+	uv run bandit -q -c pyproject.toml -r agent api data evals scripts ui
 	mkdir -p .cache
 	uv export --locked --no-hashes --no-emit-project --format requirements-txt -o .cache/requirements.txt
 	uv run pip-audit --strict -r .cache/requirements.txt

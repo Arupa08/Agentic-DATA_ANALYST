@@ -23,7 +23,7 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from agent.deps import AgentDeps
 from agent.llm import BudgetExceeded, InvalidModelOutput, RateLimited, track_costs
@@ -87,6 +87,9 @@ def build_graph(deps: AgentDeps) -> CompiledStateGraph[AgentState, Any, AgentSta
 
 
 class Chart(BaseModel):
+    # PNG bytes travel as base64 in JSON (the API), and are decoded back on the way in
+    model_config = ConfigDict(ser_json_bytes="base64", val_json_bytes="base64")
+
     png: bytes
     alt_text: str
 
@@ -130,6 +133,7 @@ class AgentResponse(BaseModel):
     unpriced_calls: bool = False
     latency_ms: int = 0
     prompt_version: str = PROMPT_VERSION
+    trace_id: str | None = None  # the LangSmith root run id, when tracing is on
 
 
 class Agent:
@@ -151,10 +155,12 @@ class Agent:
         if not question or len(question) > MAX_QUESTION_CHARS:
             raise ValueError(f"question must be 1-{MAX_QUESTION_CHARS} characters")
         request_id = uuid.uuid4().hex[:12]
+        run_id = uuid.uuid4()
         token = request_id_var.set(request_id)
         start = time.monotonic()
         config: RunnableConfig = {
             "run_name": "nl_agent",
+            "run_id": run_id,
             "recursion_limit": RECURSION_LIMIT,
             "tags": [*tags, f"prompt:{PROMPT_VERSION}", *([f"case:{case_id}"] if case_id else [])],
             "metadata": {
@@ -191,6 +197,7 @@ class Agent:
             response.total_tokens = tracker.total_tokens
             response.unpriced_calls = tracker.has_unpriced_calls
             response.latency_ms = int((time.monotonic() - start) * 1000)
+            response.trace_id = str(run_id) if self.tracer is not None else None
             log.info(
                 "request_done",
                 extra={

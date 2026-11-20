@@ -4,7 +4,7 @@ A LangGraph agent (Planner → Executor → Critic → Synthesizer, with a Criti
 replan edge) that answers natural-language business questions over a deliberately messy
 SQLite e-commerce DB, and proves its reliability with a frozen eval set.
 
-Build plan: 8 phases. **Done: Phases 0–6.** Live runs use a free local model (Ollama `qwen3:4b-instruct`). Local baseline (2026-11-17): 50.0% pass rate, multi-step 0%; the 4B judge mis-graded some rubric cases, now fixed (reason-first but optional and short, one field per rubric item, "may" items are permissions, one nudged retry for unreadable verdicts). Demo UI: `ui/app.py` (Ask page `ui/ask_page.py` + eval dashboard `ui/dashboard.py`). Re-graded baseline 53.5%; with critic SQL rules and the clarify nudge off (now the default): 60.5% (2026-11-20). Next: Phase 7 (ship).
+Build plan: 8 phases. **Done: Phases 0–7** (Phase 7: FastAPI `api/main.py`, Dockerfile + `compose.yaml`; not yet hosted, demo video not recorded). Live runs use a free local model (Ollama `qwen3:4b-instruct`). Local baseline (2026-11-17): 50.0% pass rate, multi-step 0%; the 4B judge mis-graded some rubric cases, now fixed (reason-first but optional and short, one field per rubric item, "may" items are permissions, one nudged retry for unreadable verdicts). Demo UI: `ui/app.py` (Ask page `ui/ask_page.py` + eval dashboard `ui/dashboard.py`). Re-graded baseline 53.5%; with critic SQL rules and the clarify nudge off (now the default): 60.5% (2026-11-20). Next: hosting (needs a reachable model and a host account) and the demo recording.
 
 ## Commands
 
@@ -23,6 +23,8 @@ Build plan: 8 phases. **Done: Phases 0–6.** Live runs use a free local model (
 | run evals (live, costs money) | `uv run python -m evals.run_evals --label baseline [--runs 3] [--ids ...] [--routing all-strong] [--no-glossary] [--no-critic-llm]` |
 | compare two reports | `uv run python -m evals.compare A.json B.json` |
 | demo UI (ask + eval dashboard) | `uv run --group ui streamlit run ui/app.py` (localhost:8501) |
+| API | `uv run uvicorn api.main:app --port 8000` (docs at /docs) |
+| Docker stack (API + UI) | `docker compose up --build` (`UI_PORT=8502` if 8501 is taken) |
 | re-grade a report (grader changes only) | `uv run python -m evals.regrade evals/reports/<report>.json` |
 
 ## Working rules
@@ -51,6 +53,7 @@ Build plan: 8 phases. **Done: Phases 0–6.** Live runs use a free local model (
   OpenAI `function_calling` (override: `STRUCTURED_OUTPUT_METHOD`). Quota errors raise `RateLimited`; the eval
   harness stops and marks remaining runs "not run" rather than scoring them. Pricing in `agent/llm.py` is the
   paid list price, so free-tier $/query is notional.
+- Linux check without CI: Docker Desktop is installed; run the suite in `ghcr.io/astral-sh/uv:python3.13-bookworm-slim` (CI installs `--all-groups`).
 - Agent tests use `tests/agent_fakes.ScriptedLLM`; they never call a real model. CI never runs live evals.
 - Eval reports in `evals/reports/` are committed. Keep the baseline and every "after" report; never delete a bad one.
 - After each phase, review the code against this checklist and the security tests, then fix gaps.

@@ -153,3 +153,30 @@ def test_page_hides_internal_errors(page: Any) -> None:
     assert not at.exception
     assert [e.value for e in at.error] == ["Something went wrong. Please try again."]
     assert "secret internal detail" not in _all_text(at)
+
+
+def test_page_uses_the_api_when_configured(page: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    from agent.graph import AgentResponse
+
+    monkeypatch.setenv(support.API_URL_ENV, "http://api:8000")
+    answer = AgentResponse(
+        request_id="r1", question="q", status="answered", answer="Remote answer: 42."
+    ).model_dump_json()
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/health":
+            return httpx.Response(200, json={"status": "ok"})
+        asked.append(request.content.decode())
+        return httpx.Response(200, content=answer)
+
+    remote = support.RemoteAgent(
+        "http://api:8000", client=httpx.Client(transport=httpx.MockTransport(handler))
+    )
+    at = page(remote)
+    assert "🟢 The agent API is up" in [c.value for c in at.caption]
+    at.button(key="example_0").click().run()
+
+    assert not at.exception
+    assert "Remote answer: 42." in _all_text(at)
+    assert len(asked) == 1 and support.EXAMPLES[0][1] in asked[0]
