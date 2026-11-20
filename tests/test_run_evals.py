@@ -229,8 +229,14 @@ def test_offline_harness_writes_reports(shop_db_path: Path, tmp_path: Path) -> N
     answer = SynthesisOutput(answer="Q3 2025 revenue was $1,783,489.61.")
     decline = Plan(outcome="decline", message="I can only read data.")
     # workers=1 makes the run order deterministic: simple_01 #1, #2, then adv_01 #1, #2
+    # the DB-unchanged check must hash the file the SQL tool queries; the configured path
+    # doesn't exist on a clean CI checkout (data/shop.db is generated, not committed)
     agent = Agent(
-        make_deps(shop_db_path, ScriptedLLM([plan, answer, plan, answer, decline, decline]))
+        make_deps(
+            shop_db_path,
+            ScriptedLLM([plan, answer, plan, answer, decline, decline]),
+            database_url="sqlite:///no/such/shop.db",
+        )
     )
     schema = extraction_schema(c_simple.expected)
     grader = ScriptedLLM(

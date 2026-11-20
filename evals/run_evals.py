@@ -112,7 +112,7 @@ def run_one(
 ) -> RunGrade:
     if stop is not None and stop.is_set():
         return _ungraded(case, run, QUOTA_STOP)
-    db = agent.deps.settings.db_path
+    db = agent.deps.sql.db_path  # the file the agent actually queries, not just the setting
     before = file_sha256(db) if case.expected_behavior == "blocked" else None
     try:
         response = agent.ask(case.question, case_id=case.id, tags=("eval", label))
