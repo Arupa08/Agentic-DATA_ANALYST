@@ -60,8 +60,10 @@ class Settings(BaseSettings):
     max_tool_calls: int = Field(default=15, ge=1, le=50)
     # the critic's LLM check (rule checks always run); off = cheaper, for routing experiments
     critic_llm: bool = True
-    # when the planner wants to ask, nudge it once to state an assumption instead
-    clarify_nudge: bool = True
+    # when the planner wants to ask, nudge it once to state an assumption instead.
+    # Off by default: on the local 4B model it took underspecified cases from 60% to 9%
+    # (evals/reports/2026-11-18_1927_critic-rules-local-regraded.md), because asking passes.
+    clarify_nudge: bool = False
 
     @model_validator(mode="after")
     def _require_keys(self) -> Settings:

@@ -47,13 +47,15 @@ same 4B model (judge fixes applied by re-grading; the original reports are kept 
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Baseline ([report](evals/reports/2026-11-18_1915_baseline-local-regraded.md)) | **53.5%** (46/86) | 60% | 50% | 0% | 60% | 100% | 100% | 70s |
 | + critic SQL rules, guard fix, clarify nudge ([report](evals/reports/2026-11-18_1927_critic-rules-local-regraded.md)) | **51.2%** (44/86) | 67% | 67% | 0% | 9% | 100% | 100% | 92s |
+| Same, clarify nudge off ([report](evals/reports/2026-11-20_1145_no-nudge-local.md)) | **60.5%** (52/86) | 80% | 67% | 0% | 60% | 100% | 100% | 63s |
 | Held-out set, 5 unseen cases ([report](evals/reports/2026-11-18_1532_holdout-local.md)) | **73.3%** (11/15) | 100% | 100% | 0% | 67% | n/a | 100% | |
 
-The critic's new SQL rules helped where they aimed (dirty data +17 pp, simple lookups +7 pp,
-dirty-data-missed failures 7 to 3), but the nudge to state an assumption instead of asking
-cost the underspecified cases 51 pp, so the net change is -2.3 pp. Multi-step questions remain
-out of reach for a 4B model. Every adversarial run was refused with the database unchanged and
-no leaks.
+The critic's new SQL rules helped where they aimed (dirty data +17 pp, simple lookups up to
++20 pp, dirty-data-missed failures 7 to 3). A nudge to state an assumption instead of asking
+cost the underspecified cases 51 pp (asking is a valid answer there), so it is now off by
+default; with it off, the pass rate is **60.5%, +7.0 pp over the baseline**, with 16/30 cases
+passing every run. Multi-step questions remain out of reach for a 4B model. Every adversarial
+run was refused with the database unchanged and no leaks. The held-out run used the nudge.
 
 After a grader change, re-score a report's judge-graded runs without re-running the agent
 (writes a new `<label>-regraded` report and leaves the original as recorded):

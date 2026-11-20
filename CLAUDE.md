@@ -4,7 +4,7 @@ A LangGraph agent (Planner → Executor → Critic → Synthesizer, with a Criti
 replan edge) that answers natural-language business questions over a deliberately messy
 SQLite e-commerce DB, and proves its reliability with a frozen eval set.
 
-Build plan: 8 phases. **Done: Phases 0–6.** Live runs use a free local model (Ollama `qwen3:4b-instruct`). Local baseline (2026-11-17): 50.0% pass rate, multi-step 0%; the 4B judge mis-graded some rubric cases, now fixed (reason-first but optional and short, one field per rubric item, "may" items are permissions, one nudged retry for unreadable verdicts). Demo UI: `ui/app.py` (Ask page `ui/ask_page.py` + eval dashboard `ui/dashboard.py`). Next: re-grade the baseline and the critic-rules run, then Phase 7 (ship).
+Build plan: 8 phases. **Done: Phases 0–6.** Live runs use a free local model (Ollama `qwen3:4b-instruct`). Local baseline (2026-11-17): 50.0% pass rate, multi-step 0%; the 4B judge mis-graded some rubric cases, now fixed (reason-first but optional and short, one field per rubric item, "may" items are permissions, one nudged retry for unreadable verdicts). Demo UI: `ui/app.py` (Ask page `ui/ask_page.py` + eval dashboard `ui/dashboard.py`). Re-graded baseline 53.5%; with critic SQL rules and the clarify nudge off (now the default): 60.5% (2026-11-20). Next: Phase 7 (ship).
 
 ## Commands
 

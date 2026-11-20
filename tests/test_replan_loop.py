@@ -15,6 +15,7 @@ import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 
+from agent.config import Settings
 from agent.graph import Agent
 from agent.llm import InvalidModelOutput
 from agent.state import CriticOutput, Plan, SynthesisOutput
@@ -126,7 +127,7 @@ def test_repeating_a_failed_plan_is_rejected_in_code(shop_db_path: Path) -> None
 def test_ambiguous_question_can_still_ask_after_one_nudge(shop_db_path: Path) -> None:
     ask = Plan(outcome="clarify", message="Do you mean revenue, churn, or support volume?")
     llm = ScriptedLLM([ask, ask])  # nudged once, still asks: the question stands
-    r = Agent(make_deps(shop_db_path, llm)).ask("How are things going?")
+    r = Agent(make_deps(shop_db_path, llm, clarify_nudge=True)).ask("How are things going?")
     assert r.status == "needs_clarification"
     assert r.answer == "Do you mean revenue, churn, or support volume?"
     assert [c[1] for c in llm.calls] == ["planner", "planner_assume"]
@@ -138,21 +139,25 @@ def test_needless_question_becomes_an_assumption(shop_db_path: Path) -> None:
     ask = Plan(outcome="clarify", message="Created or resolved in Q4 2025?")
     plan = sql_plan(q3_revenue("order_ts"), assumptions=["'opened' means created"])
     llm = ScriptedLLM([ask, plan, ANSWER])
-    r = Agent(make_deps(shop_db_path, llm)).ask("How many tickets were opened in Q4 2025?")
+    r = Agent(make_deps(shop_db_path, llm, clarify_nudge=True)).ask(
+        "How many tickets were opened in Q4 2025?"
+    )
     assert r.status == "answered" and r.assumptions == ["'opened' means created"]
 
 
 def test_unusable_nudged_plan_keeps_the_original_question(shop_db_path: Path) -> None:
     ask = Plan(outcome="clarify", message="Which metric?")
     llm = ScriptedLLM([ask, InvalidModelOutput("junk")])
-    r = Agent(make_deps(shop_db_path, llm)).ask("How are things going?")
+    r = Agent(make_deps(shop_db_path, llm, clarify_nudge=True)).ask("How are things going?")
     assert r.status == "needs_clarification" and r.answer == "Which metric?"
 
 
-def test_nudge_can_be_switched_off(shop_db_path: Path) -> None:
+def test_nudge_is_off_by_default(shop_db_path: Path) -> None:
+    # it cost underspecified cases 51 pp on the local model: asking is a valid answer there
+    assert Settings(_env_file=None, openai_api_key="sk-test-not-real").clarify_nudge is False
     ask = Plan(outcome="clarify", message="Which metric?")
     llm = ScriptedLLM([ask])
-    r = Agent(make_deps(shop_db_path, llm, clarify_nudge=False)).ask("How are things going?")
+    r = Agent(make_deps(shop_db_path, llm)).ask("How are things going?")
     assert r.status == "needs_clarification" and len(llm.calls) == 1
 
 
