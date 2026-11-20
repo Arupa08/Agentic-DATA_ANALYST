@@ -37,7 +37,7 @@ typecheck:
 	uv run mypy
 
 security:           ## code + dependency security scans (secret scan runs in pre-commit / CI)
-	uv run bandit -q -c pyproject.toml -r agent data evals scripts
+	uv run bandit -q -c pyproject.toml -r agent data evals scripts ui
 	mkdir -p .cache
 	uv export --locked --no-hashes --no-emit-project --format requirements-txt -o .cache/requirements.txt
 	uv run pip-audit --strict -r .cache/requirements.txt
